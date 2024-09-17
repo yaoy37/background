@@ -9,6 +9,7 @@ import librosa
 import soundfile as sf
 
 from test.test_ws import get_test_wb_html as twh
+from sentence import forecast_sentence
 
 app = FastAPI()
 
@@ -60,18 +61,11 @@ async def websocket_endpoint(websocket: WebSocket):
             if message:
                 sample_rate = 44100
                 # 将接收到的二进制数据转换为 numpy 数组
-
-                if data.get(client_id) is None:
-                    data[client_id] = np.frombuffer(message, dtype=np.int16)
-                else:
-                    data[client_id] = np.append(data[client_id], np.frombuffer(message, dtype=np.int16))
-
-                await websocket.send_text("client_id:{} OK".format(client_id))
-                print("client_id:{},len:{}".format(client_id, data[client_id].shape[0]))
-                if data[client_id].shape[0] > 2 * 44100 * 10:
-                    # 保存为 WAV 文件
-                    write("received_audio{}.wav".format(data_number.get(client_id, 1)), sample_rate, data[client_id])
-                    data[client_id] = None
+                np_data = np.frombuffer(message, dtype=np.int16)
+                # await websocket.send_text("client_id:{} OK".format(client_id))
+                sentence_data = forecast_sentence(np_data)
+                if sentence_data:
+                    write("received_audio{}.wav".format(data_number.get(client_id, 1)), sample_rate, sentence_data)
                     data_number[client_id] = data_number.get(client_id, 1) + 1
 
                 # 读取WAV文件
