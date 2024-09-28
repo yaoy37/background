@@ -9,7 +9,7 @@ import librosa
 import soundfile as sf
 
 from test.test_ws import get_test_wb_html as twh
-from sentence import forecast_sentence
+from sentence import SentenceLogic
 
 app = FastAPI()
 
@@ -46,6 +46,7 @@ async def websocket_endpoint(websocket: WebSocket):
 
 data = {"client-id-12345": None}
 data_number = {"client-id-12345": 1}
+sl = SentenceLogic()
 
 
 @app.websocket("/ws_binary")
@@ -63,8 +64,10 @@ async def websocket_endpoint(websocket: WebSocket):
                 # 将接收到的二进制数据转换为 numpy 数组
                 np_data = np.frombuffer(message, dtype=np.int16)
                 # await websocket.send_text("client_id:{} OK".format(client_id))
-                sentence_data = forecast_sentence(np_data)
-                if sentence_data:
+                # print(np_data)
+                sentence_data = sl.forecast_sentence(np_data)
+                if sentence_data.any():
+                    print("received_audio")
                     write("received_audio{}.wav".format(data_number.get(client_id, 1)), sample_rate, sentence_data)
                     data_number[client_id] = data_number.get(client_id, 1) + 1
 
